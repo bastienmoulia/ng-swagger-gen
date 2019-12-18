@@ -12,6 +12,12 @@ Angular / RxJS version compatibility:
 - Starting with version `1.0.0`, Angular 6+ is required.
 - Version `0.11.x` supports Angular 4.3+ (with rxjs 5.5) and Angular 5.
 
+## OpenAPI 3
+
+If you are interested in generating a client for services described using
+OpenAPI 3, take a look on
+[ng-openapi-gen](https://github.com/cyclosproject/ng-openapi-gen).
+
 ## Major version upgrade notices
 
 - [Angular 6](https://blog.angular.io/version-6-of-angular-now-available-cc56b0efa7a4)
@@ -238,6 +244,7 @@ The supported properties in the JSON file are:
   section, will generate a corresponding `<model>.example.ts` file, exporting a
   function called `get<Model>Example()`, which will return the data present in
   the example section.
+- `camelCase`: Generates service methods in camelCase instead of PascalCase.
 
 ### Configuration file example
 The following is an example of a configuration file which will choose a few
@@ -292,39 +299,15 @@ the call to `ng-swagger-gen`, like:
 
 ## Specifying the root URL / web service endpoint
 The easiest way to specify a custom root URL (web service endpoint URL) is to
-inject the `ApiConfiguration` instance in some service and set the `rootUrl`
-property from there.
-
-Alternatively, define a provider for `APP_INITIALIZER` in your root module,
-like this:
+use `forRoot` method of `ApiModule` and set the `rootUrl` property from there.
 
 ```typescript
-export function initApiConfiguration(config: ApiConfiguration): Function {
-  return () => {
-    config.rootUrl = 'https://some-root-url.com';
-  };
-}
-export const INIT_API_CONFIGURATION: Provider = {
-  provide: APP_INITIALIZER,
-  useFactory: initApiConfiguration,
-  deps: [ApiConfiguration],
-  multi: true
-};
-
-/**
- * Then declare the provider. In this example, the AppModule is also
- * importing the ApiModule, which is important to get access to the
- * generated services
- */
 @NgModule({
   declarations: [
     AppComponent
   ],
   imports: [
-    ApiModule
-  ],
-  providers: [
-    INIT_API_CONFIGURATION
+    ApiModule.forRoot({rootUrl: 'https://some-root-url.com'}),
   ],
   bootstrap: [
     AppComponent
@@ -332,6 +315,9 @@ export const INIT_API_CONFIGURATION: Provider = {
 })
 export class AppModule { }
 ```
+
+Alternatively, you can inject the `ApiConfiguration` instance in some service
+or component, such as the `AppComponent` and set the `rootUrl` property there.
 
 ## Passing request headers / customizing the request
 To pass request headers, such as authorization or API keys, as well as having a
