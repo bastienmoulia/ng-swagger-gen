@@ -6,6 +6,7 @@ function parseJSON(file) {
 }
 
 const DEFAULT_CONFIG = 'ng-swagger-gen.json';
+const DEFAULT_LOG_LEVEL = 'info';
 const SCHEMA = 'ng-swagger-gen-schema.json';
 const fs = require('fs');
 const path = require('path');
@@ -62,6 +63,14 @@ argParser.addArgument(
     dest: "genConfig"
   }
 );
+argParser.addArgument(
+  ["--log-level"],
+  {
+    help: "Change the log level.",
+    defaultValue: DEFAULT_LOG_LEVEL,
+    dest: "logLevel"
+  }
+);
 var args = argParser.parseArgs();
 
 var config = args.config;
@@ -80,12 +89,15 @@ if (args.genConfig) {
   if (configExists) {
     // The configuration file exists, so read it
     const options = parseJSON(config);
-    // Allow overriding both swagger and output via arguments
+    // Allow overriding both swagger, output and logLevel via arguments
     if (args.swagger) {
       options.swagger = args.swagger;
     }
     if (args.output) {
       options.output = args.output;
+    }
+    if (args.logLevel) {
+      options.logLevel = args.logLevel;
     }
     run(options);
   } else if (args.swagger) {

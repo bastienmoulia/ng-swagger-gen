@@ -7,14 +7,29 @@ const fs = require('fs');
 const path = require('path');
 const Mustache = require('mustache');
 const $RefParser = require('json-schema-ref-parser');
-var npmConfig = require('npm-conf');
+const npmConfig = require('npm-conf');
+const winston = require('winston');
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  ),
+  transports: [
+    new winston.transports.Console()
+  ]
+});
 
 /**
  * Main generate function
  */
 function ngSwaggerGen(options) {
+  if (options.logLevel) {
+    logger.level = options.logLevel;
+  }
+
   if (typeof options.swagger != 'string') {
-    console.error("Swagger file not specified in the 'swagger' option");
+    logger.error("Swagger file not specified in the 'swagger' option");
     process.exit(1);
   }
 
@@ -25,12 +40,12 @@ function ngSwaggerGen(options) {
       doGenerate(data, options);
     },
     err => {
-      console.error(
+      logger.error(
         `Error reading swagger location ${options.swagger}: ${err}`
       );
     }
   ).catch(function (error) {
-    console.error(`Error: ${error}`);
+    logger.error(`Error: ${error}`);
   });
 }
 
@@ -113,7 +128,7 @@ function doGenerate(swagger, options) {
   var prefix = options.prefix || 'Api';
 
   if (swagger.swagger !== '2.0') {
-    console.error(
+    logger.error(
       'Invalid swagger specification. Must be a 2.0. Currently ' +
         swagger.swagger
     );
@@ -161,7 +176,7 @@ function doGenerate(swagger, options) {
     var code = Mustache.render(template, model, templates)
       .replace(/[^\S\r\n]+$/gm, '');
     fs.writeFileSync(file, code, 'UTF-8');
-    console.info('Wrote ' + file);
+    logger.info('Wrote ' + file);
   };
 
   // Calculate the globally used names
@@ -370,7 +385,7 @@ function applyTagFilter(models, services, options) {
       (!excluded || excluded.indexOf(serviceName) < 0);
     if (!include) {
       // This service is skipped - remove it
-      console.info(
+      logger.info(
         'Ignoring service ' + serviceName + ' because it was not included'
       );
       delete services[serviceName];
@@ -394,7 +409,7 @@ function applyTagFilter(models, services, options) {
       var model = models[normalizeModelName(modelName)];
       if (!allDependencies.has(model.modelClass)) {
         // This model is not used - remove it
-        console.info(
+        logger.info(
           'Ignoring model ' +
             modelName +
             ' because it was not used by any service'
@@ -444,7 +459,7 @@ function mkdirs(folderPath, mode) {
  */
 function rmIfExists(file) {
   if (fs.existsSync(file)) {
-    console.info('Removing stale file ' + file);
+    logger.info('Removing stale file ' + file);
     fs.unlinkSync(file);
   }
 }
@@ -938,7 +953,7 @@ function processProperties(swagger, properties, requiredProperties) {
  */
 function resolveRef(swagger, ref) {
   if (ref.indexOf('#/') != 0) {
-    console.error('Resolved references must start with #/. Current: ' + ref);
+    logger.error('Resolved references must start with #/. Current: ' + ref);
     process.exit(1);
   }
   var parts = ref.substr(2).split('/');
@@ -1065,7 +1080,7 @@ function operationId(given, method, url, allKnown) {
     id = id + '_' + i;
   }
   if (generate) {
-    console.warn(
+    logger.warn(
       "Operation '" +
         method +
         "' on '" +
@@ -1075,7 +1090,7 @@ function operationId(given, method, url, allKnown) {
         "'."
     );
   } else if (duplicated) {
-    console.warn(
+    logger.warn(
       "Operation '" +
         method +
         "' on '" +
